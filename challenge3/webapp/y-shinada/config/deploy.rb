@@ -29,7 +29,7 @@ append :linked_dirs, *%w(log tmp/pids tmp/cache tmp/sockets public/system vendor
 # Default value for default_env is {}
 # set :default_env, { path: "/opt/ruby/bin:$PATH" }
 
-# Default value for local_user is ENV['USER']
+# Default value for local_user is ENV["USER"]
 # set :local_user, -> { `git config user.name`.chomp }
 
 # Default value for keep_releases is 5
@@ -43,32 +43,10 @@ set :assets_manifests, []
 Rake::Task["deploy:assets:precompile"].clear
 Rake::Task["deploy:assets:backup_manifest"].clear
 Rake::Task["deploy:assets:restore_manifest"].clear
-Rake::Task['deploy:cleanup_assets'].clear
-Rake::Task['deploy:clobber_assets'].clear
-Rake::Task['deploy:normalize_assets'].clear
-Rake::Task['deploy:rollback_assets'].clear
-namespace :deploy do
-  task :cleanup_uncompile_assets do
-    on roles(:web) do
-      subdirs = Dir.glob('app/assets/javascripts/**/**.js').map { |f| shared_path.join(File.dirname(f.gsub(/\Aapp/, 'public'))) }.uniq
-      subdirs.each do |f|
-        info "Cleanup #{f}"
-        execute :rm, "-rf", f
-      end
-    end
-  end
+Rake::Task["deploy:cleanup_assets"].clear
+Rake::Task["deploy:clobber_assets"].clear
+Rake::Task["deploy:normalize_assets"].clear
+Rake::Task["deploy:rollback_assets"].clear
 
-  task :deliver_uncompile_assets do
-    on roles(:web) do
-      Dir.glob('app/assets/javascripts/**/**.js').each do |f|
-        subdir = shared_path.join(File.dirname(f.gsub(/\Aapp/, 'public')))
-        execute :mkdir, "-p", subdir
-        info "Uploading #{f} to public"
-        upload! File.open(f), subdir.join(File.basename(f))
-      end
-    end
-  end
-end
-
-after 'deploy:symlink:release', 'deploy:cleanup_uncompile_assets'
-after 'deploy:cleanup_uncompile_assets', 'deploy:deliver_uncompile_assets'
+after "deploy:symlink:release", "hello_energy:deploy:cleanup_uncompile_assets"
+after "deploy:cleanup_uncompile_assets", "hello_energy:deploy:deliver_uncompile_assets"
